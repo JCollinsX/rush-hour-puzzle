@@ -18,6 +18,7 @@ contract RushHourSolver is IRushHourSolver {
     }
 
     struct Queue {
+        uint8 queueId;
         Step[] steps;
         GameBoardLib.GameBoard board;
     }
@@ -25,65 +26,61 @@ contract RushHourSolver is IRushHourSolver {
     uint8 public constant BOARD_HEIGHT = 6;
     uint8 public constant BOARD_WIDTH = 6;
 
-    function solve(uint8[6][6] memory board) external view override returns (Step[] memory) {
-        Step[] memory steps = new Step[](100);
+    function solve(uint8[6][6] memory board) external pure override returns (Step[] memory) {
         GameBoardLib.GameBoard memory gameBoard;
         gameBoard.setBoard(board);
-
-        VehicleLib.Vehicle[] memory vehicles = new VehicleLib.Vehicle[](16);
-        for (uint8 i = 0; i < 6; i++) {
-            for (uint8 j = 0; j < 6; j++) {
-                if (board[i][j] == 1) {
-                    if (vehicles[0].carId == 0) {
-                        vehicles[0] = VehicleLib.Vehicle(1, i, j, i, j, true);
-                    } else {
-                        vehicles[0].setEndLocation(i, j);
-                    }
-                }
-                if (board[i][j] != 0) {
-                    if (vehicles[board[i][j] - 1].carId == 0) {
-                        vehicles[board[i][j] - 1] = VehicleLib.Vehicle(board[i][j] - 1, i, j, i, j, false);
-                    } else {
-                        vehicles[board[i][j] - 1].setEndLocation(i, j);
-                    }
-                }
-            }
-        }
 
         bytes32[] memory visited = new bytes32[](100);
         Queue[] memory queue = new Queue[](100);
         uint8 visitedIndex = 0;
         uint8 queueIndex = 0;
         queue[queueIndex] = Queue({
+            queueId: 1,
             steps: new Step[](0),
             board: gameBoard
         });
 
-        for (uint8 depth = 1; depth <= 50; depth++) {
+        for (uint8 depth = 1; depth <= 150; depth++) {
             Queue memory popedQueue = pop(queue);
 
-            for (uint8 i = 0; i < popedQueue.steps.length; i++) {
-                console.log(depth);
-                console.log(popedQueue.steps[i].carId, popedQueue.steps[i].direction == Direction.FORWARD ? "FORWARD" : "BACKWARD");
-            }
-
-            console.log(popedQueue.board.board[0][0], popedQueue.board.board[0][1], popedQueue.board.board[0][2]);
-            console.log(popedQueue.board.board[0][3], popedQueue.board.board[0][4], popedQueue.board.board[0][5]);
-            console.log(popedQueue.board.board[1][0], popedQueue.board.board[1][1], popedQueue.board.board[1][2]);
-            console.log(popedQueue.board.board[1][3], popedQueue.board.board[1][4], popedQueue.board.board[1][5]);
-            console.log(popedQueue.board.board[2][0], popedQueue.board.board[2][1], popedQueue.board.board[2][2]);
-            console.log(popedQueue.board.board[2][3], popedQueue.board.board[2][4], popedQueue.board.board[2][5]);
-            console.log(popedQueue.board.board[3][0], popedQueue.board.board[3][1], popedQueue.board.board[3][2]);
-            console.log(popedQueue.board.board[3][3], popedQueue.board.board[3][4], popedQueue.board.board[3][5]);
-            console.log(popedQueue.board.board[4][0], popedQueue.board.board[4][1], popedQueue.board.board[4][2]);
-            console.log(popedQueue.board.board[4][3], popedQueue.board.board[4][4], popedQueue.board.board[4][5]);
-            console.log(popedQueue.board.board[5][0], popedQueue.board.board[5][1], popedQueue.board.board[5][2]);
-            console.log(popedQueue.board.board[5][3], popedQueue.board.board[5][4], popedQueue.board.board[5][5]);
-
-            console.log(GameBoardLib.isSolved(popedQueue.board));
-            if (GameBoardLib.isSolved(popedQueue.board)) {
+            if (GameBoardLib.isSolved(popedQueue.board) || popedQueue.queueId == 0) {
                 return popedQueue.steps;
             }
+
+            VehicleLib.Vehicle[] memory vehicles = new VehicleLib.Vehicle[](16);
+            for (uint8 i = 0; i < BOARD_WIDTH; i++) {
+                for (uint8 j = 0; j < BOARD_HEIGHT; j++) {
+                    if (popedQueue.board.board[i][j] == 1) {
+                        if (vehicles[0].carId == 0) {
+                            vehicles[0] = VehicleLib.Vehicle(1, i, j, i, j, true);
+                        } else {
+                            vehicles[0].setEndLocation(i, j);
+                        }
+                    }
+                    if (popedQueue.board.board[i][j] != 0) {
+                        if (vehicles[popedQueue.board.board[i][j] - 1].carId == 0) {
+                            vehicles[popedQueue.board.board[i][j] - 1] = VehicleLib.Vehicle(popedQueue.board.board[i][j], i, j, i, j, false);
+                        } else {
+                            vehicles[popedQueue.board.board[i][j] - 1].setEndLocation(i, j);
+                        }
+                    }
+                }
+            }
+
+            // console.log("popedQueue.board start");
+            // console.log(popedQueue.board.board[0][0], popedQueue.board.board[0][1], popedQueue.board.board[0][2]);
+            // console.log(popedQueue.board.board[0][3], popedQueue.board.board[0][4], popedQueue.board.board[0][5]);
+            // console.log(popedQueue.board.board[1][0], popedQueue.board.board[1][1], popedQueue.board.board[1][2]);
+            // console.log(popedQueue.board.board[1][3], popedQueue.board.board[1][4], popedQueue.board.board[1][5]);
+            // console.log(popedQueue.board.board[2][0], popedQueue.board.board[2][1], popedQueue.board.board[2][2]);
+            // console.log(popedQueue.board.board[2][3], popedQueue.board.board[2][4], popedQueue.board.board[2][5]);
+            // console.log(popedQueue.board.board[3][0], popedQueue.board.board[3][1], popedQueue.board.board[3][2]);
+            // console.log(popedQueue.board.board[3][3], popedQueue.board.board[3][4], popedQueue.board.board[3][5]);
+            // console.log(popedQueue.board.board[4][0], popedQueue.board.board[4][1], popedQueue.board.board[4][2]);
+            // console.log(popedQueue.board.board[4][3], popedQueue.board.board[4][4], popedQueue.board.board[4][5]);
+            // console.log(popedQueue.board.board[5][0], popedQueue.board.board[5][1], popedQueue.board.board[5][2]);
+            // console.log(popedQueue.board.board[5][3], popedQueue.board.board[5][4], popedQueue.board.board[5][5]);
+            // console.log("popedQueue.board end");
 
             States[] memory states = getStates(popedQueue.board, vehicles);
 
@@ -112,6 +109,7 @@ contract RushHourSolver is IRushHourSolver {
                         Step[] memory newSteps = append(popedQueue.steps, Step(states[i].vehicle.carId, states[i].direction));
 
                         queue[queueIndex] = Queue({
+                            queueId: queueIndex + 2,
                             steps: newSteps,
                             board: states[i].board
                         });
@@ -124,7 +122,7 @@ contract RushHourSolver is IRushHourSolver {
             }
         }
 
-        return steps;
+        return new Step[](0);
     }
 
     function getStates(GameBoardLib.GameBoard memory _gameBoard, VehicleLib.Vehicle[] memory _vehicles) internal pure returns (States[] memory) {
@@ -293,9 +291,13 @@ contract RushHourSolver is IRushHourSolver {
     }
 
     function pop(Queue[] memory _queue) internal pure returns (Queue memory) {
-        Queue memory queue = _queue[0];
+        Queue memory queue;
         for (uint8 i = 0; i < _queue.length - 1; i++) {
-            _queue[i] = _queue[i + 1];
+            if (_queue[i].queueId > 0) {
+                queue = _queue[i];
+                delete _queue[i];
+                return queue;
+            }
         }
         return queue;
     }
@@ -317,109 +319,5 @@ contract RushHourSolver is IRushHourSolver {
         }
 
         return false;
-    }
-    
-    // function dfs(uint8 row, uint8 col, uint8 depth, uint8[6][6] memory board, Step[] memory currentSolution) internal view returns (Step[] memory solution) {
-        
-    //     console.log(board[0][0], board[0][1], board[0][2]);
-    //     console.log(board[0][3], board[0][4], board[0][5]);
-    //     console.log(board[1][0], board[1][1], board[1][2]);
-    //     console.log(board[1][3], board[1][4], board[1][5]);
-    //     console.log(board[2][0], board[2][1], board[2][2]);
-    //     console.log(board[2][3], board[2][4], board[2][5]);
-    //     console.log(board[3][0], board[3][1], board[3][2]);
-    //     console.log(board[3][3], board[3][4], board[3][5]);
-    //     console.log(board[4][0], board[4][1], board[4][2]);
-    //     console.log(board[4][3], board[4][4], board[4][5]);
-    //     console.log(board[5][0], board[5][1], board[5][2]);
-    //     console.log(board[5][3], board[5][4], board[5][5]);
-
-    //     console.log("row: ", row);
-
-    //     if (depth == 0) {
-    //         return new Step[](0);
-    //     }
-        
-    //     Step[] memory solutionCopy = new Step[](currentSolution.length);
-    //     for (uint8 i = 0; i < currentSolution.length; i++) {
-    //         solutionCopy[i] = currentSolution[i];
-    //     }
-        
-    //     for (uint8 i = 0; i < 6; i++) {
-    //         for (uint8 j = 0; j < 6; j++) {
-    //             if (i == row && j == col) {
-    //                 continue; // Skip the red car
-    //             }
-                
-    //             if (board[i][j] != 0) {
-    //                 continue; // Skip non-empty cells
-    //             }
-                
-    //             // Move the vehicle to the empty cell
-    //             uint8[6][6] memory newBoard = board;
-    //             newBoard[i][j] = board[row][col];
-    //             newBoard[row][col] = 0;
-                
-    //             Step[] memory newSolution = new Step[](currentSolution.length + 1);
-    //             for (uint8 k = 0; k < currentSolution.length; k++) {
-    //                 newSolution[k] = currentSolution[k];
-    //             }
-                
-    //             if (i == row) {
-    //                 // Move horizontally
-    //                 if (j < col) {
-    //                     newSolution[currentSolution.length] = Step(board[i][j], MovementDirection.Left);
-    //                 } else {
-    //                     newSolution[currentSolution.length] = Step(board[i][j], MovementDirection.Right);
-    //                 }
-    //             } else {
-    //                 // Move vertically
-    //                 if (i < row) {
-    //                     newSolution[currentSolution.length] = Step(board[i][j], MovementDirection.Up);
-    //                 } else {
-    //                     newSolution[currentSolution.length] = Step(board[i][j], MovementDirection.Down);
-    //                 }
-    //             }
-                
-    //             // Check if the puzzle is solved
-    //             if (newBoard[2][5] == 1) {
-    //                 currentSolution = newSolution;
-    //                 return newSolution;
-    //             }
-                
-    //             // Recursively search with reduced depth
-    //             Step[] memory reducedDepthSolution = dfs(i, j, depth - 1, newBoard, newSolution);
-    //             if (reducedDepthSolution.length > 0) {
-    //                 return reducedDepthSolution;
-    //             }
-
-    //             // Undo the move
-    //             if (i == row) {
-    //                 // Undo horizontal movement
-    //                 if (j < col) {
-    //                     delete newSolution[currentSolution.length];
-    //                     newBoard[row][col] = board[i][j];
-    //                     newBoard[i][j] = 0;
-    //                 } else {
-    //                     delete newSolution[currentSolution.length];
-    //                     newBoard[row][col] = board[i][j];
-    //                     newBoard[i][j] = 0;
-    //                 }
-    //             } else {
-    //                 // Undo vertical movement
-    //                 if (i < row) {
-    //                     delete newSolution[currentSolution.length];
-    //                     newBoard[row][col] = board[i][j];
-    //                     newBoard[i][j] = 0;
-    //                 } else {
-    //                     delete newSolution[currentSolution.length];
-    //                     newBoard[row][col] = board[i][j];
-    //                     newBoard[i][j] = 0;
-    //                 }
-    //             }
-    //         }
-    //     }
-        
-    //     return new Step[](0);
-    // }
+    }   
 }

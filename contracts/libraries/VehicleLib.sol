@@ -41,8 +41,8 @@ library VehicleLib {
 
         if (getOrientation(_vehicle) == Orientation.VERTICAL) {
             for (uint8 j = _vehicle.startX; j <= _vehicle.endX; j++) {
-                occupiedX[j - _vehicle.startX] = _vehicle.startY;
-                occupiedY[j - _vehicle.startX] = j;
+                occupiedX[j - _vehicle.startX] = j;
+                occupiedY[j - _vehicle.startX] = _vehicle.startY;
             }
         }
 

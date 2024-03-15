@@ -27,48 +27,48 @@ describe("RushHourSolver", function () {
     console.log(output)
   });
 
-  // it("Test Case 2", async function () {
-  //   const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
+  it("Test Case 2", async function () {
+    const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
 
-  //   const input = [
-  //     [0, 0, 0, 0, 0, 0],
-  //     [0, 0, 0, 0, 0, 0],
-  //     [1, 1, 2, 2, 0, 0],
-  //     [0, 0, 0, 0, 0, 0],
-  //     [0, 0, 0, 0, 0, 0],
-  //     [0, 0, 0, 0, 0, 0],
-  //   ]
-  //   const output = await rushHourSolver.solve(input)
-  //   console.log(output)
-  // });
+    const input = [
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+      [1, 1, 2, 2, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+    ]
+    const output = await rushHourSolver.solve(input)
+    console.log(output)
+  });
 
-  // it("Test Case 3", async function () {
-  //   const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
+  it("Test Case 3", async function () {
+    const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
 
-  //   const input = [
-  //     [0, 0, 0, 0, 0, 0],
-  //     [0, 0, 2, 0, 0, 0],
-  //     [1, 1, 2, 3, 0, 0],
-  //     [0, 0, 0, 3, 0, 0],
-  //     [0, 0, 0, 0, 0, 0],
-  //     [0, 0, 0, 0, 0, 0],
-  //   ]
-  //   const output = await rushHourSolver.solve(input)
-  //   console.log(output)
-  // });
+    const input = [
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 2, 0, 0, 0],
+      [1, 1, 2, 3, 0, 0],
+      [0, 0, 0, 3, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+      [0, 0, 0, 0, 0, 0],
+    ]
+    const output = await rushHourSolver.solve(input)
+    console.log(output)
+  });
 
-  // it("Test Case 4", async function () {
-  //   const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
+  it("Test Case 4", async function () {
+    const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
 
-  //   const input = [
-  //     [2, 2, 2, 0, 0, 3],
-  //     [0, 0, 4, 0, 0, 3],
-  //     [1, 1, 4, 0, 0, 3],
-  //     [5, 0, 4, 0, 6, 6],
-  //     [5, 0, 0, 0, 7, 0],
-  //     [8, 8, 8, 0, 7, 0]
-  //   ]
-  //   const output = await rushHourSolver.solve(input)
-  //   console.log(output)
-  // });
+    const input = [
+      [2, 2, 2, 0, 0, 3],
+      [0, 0, 4, 0, 0, 3],
+      [1, 1, 4, 0, 0, 3],
+      [5, 0, 4, 0, 6, 6],
+      [5, 0, 0, 0, 7, 0],
+      [8, 8, 8, 0, 7, 0]
+    ]
+    const output = await rushHourSolver.solve(input)
+    console.log(output)
+  });
 });
