@@ -2,91 +2,80 @@
 pragma solidity ^0.8.24;
 
 import "./interface/IRushHourSolver.sol";
-import "./libraries/GameBoardLib.sol";
 import "./libraries/VehicleLib.sol";
-import "hardhat/console.sol";
 
 contract RushHourSolver is IRushHourSolver {
     using VehicleLib for VehicleLib.Vehicle;
-    using GameBoardLib for GameBoardLib.GameBoard;
 
     struct States {
         uint8 stateId;
         VehicleLib.Vehicle vehicle;
         Direction direction;
-        GameBoardLib.GameBoard board;
+        uint8[6][6] board;
     }
 
     struct Queue {
         uint8 queueId;
         Step[] steps;
-        GameBoardLib.GameBoard board;
+        uint8[6][6] board;
     }
 
-    uint8 public constant BOARD_HEIGHT = 6;
-    uint8 public constant BOARD_WIDTH = 6;
-
     function solve(uint8[6][6] memory board) external pure override returns (Step[] memory) {
-        GameBoardLib.GameBoard memory gameBoard;
-        gameBoard.setBoard(board);
-
-        bytes32[] memory visited = new bytes32[](100);
-        Queue[] memory queue = new Queue[](100);
+        bytes32[] memory visited = new bytes32[](50);
+        Queue[] memory queue = new Queue[](50);
         uint8 visitedIndex = 0;
         uint8 queueIndex = 0;
         queue[queueIndex] = Queue({
             queueId: 1,
             steps: new Step[](0),
-            board: gameBoard
+            board: board
         });
 
-        for (uint8 depth = 1; depth <= 150; depth++) {
+        uint8[17] memory vehicleIds; // Array to store encountered vehicle IDs
+        uint8 count = 0;
+        
+        for (uint8 i = 0; i < 6; i++) {
+            for (uint8 j = 0; j < 6; j++) {
+                uint8 vehicleId = board[i][j];
+                if (vehicleId != 0 && vehicleIds[vehicleId] == 0) {
+                    vehicleIds[vehicleId] = 1;
+                    count++;
+                }
+            }
+        }
+
+        for (uint8 depth = 1; depth <= 100; depth++) {
             Queue memory popedQueue = pop(queue);
 
-            if (GameBoardLib.isSolved(popedQueue.board) || popedQueue.queueId == 0) {
+            if (isSolved(popedQueue.board) || popedQueue.queueId == 0) {
                 return popedQueue.steps;
             }
 
-            VehicleLib.Vehicle[] memory vehicles = new VehicleLib.Vehicle[](16);
-            for (uint8 i = 0; i < BOARD_WIDTH; i++) {
-                for (uint8 j = 0; j < BOARD_HEIGHT; j++) {
-                    if (popedQueue.board.board[i][j] == 1) {
+            VehicleLib.Vehicle[] memory vehicles = new VehicleLib.Vehicle[](count);
+            for (uint8 i = 0; i < 6; i++) {
+                for (uint8 j = 0; j < 6; j++) {
+                    if (popedQueue.board[i][j] == 1) {
                         if (vehicles[0].carId == 0) {
                             vehicles[0] = VehicleLib.Vehicle(1, i, j, i, j, true);
                         } else {
                             vehicles[0].setEndLocation(i, j);
                         }
                     }
-                    if (popedQueue.board.board[i][j] != 0) {
-                        if (vehicles[popedQueue.board.board[i][j] - 1].carId == 0) {
-                            vehicles[popedQueue.board.board[i][j] - 1] = VehicleLib.Vehicle(popedQueue.board.board[i][j], i, j, i, j, false);
+                    if (popedQueue.board[i][j] != 0) {
+                        if (vehicles[popedQueue.board[i][j] - 1].carId == 0) {
+                            vehicles[popedQueue.board[i][j] - 1] = VehicleLib.Vehicle(popedQueue.board[i][j], i, j, i, j, false);
                         } else {
-                            vehicles[popedQueue.board.board[i][j] - 1].setEndLocation(i, j);
+                            vehicles[popedQueue.board[i][j] - 1].setEndLocation(i, j);
                         }
                     }
                 }
             }
 
-            // console.log("popedQueue.board start");
-            // console.log(popedQueue.board.board[0][0], popedQueue.board.board[0][1], popedQueue.board.board[0][2]);
-            // console.log(popedQueue.board.board[0][3], popedQueue.board.board[0][4], popedQueue.board.board[0][5]);
-            // console.log(popedQueue.board.board[1][0], popedQueue.board.board[1][1], popedQueue.board.board[1][2]);
-            // console.log(popedQueue.board.board[1][3], popedQueue.board.board[1][4], popedQueue.board.board[1][5]);
-            // console.log(popedQueue.board.board[2][0], popedQueue.board.board[2][1], popedQueue.board.board[2][2]);
-            // console.log(popedQueue.board.board[2][3], popedQueue.board.board[2][4], popedQueue.board.board[2][5]);
-            // console.log(popedQueue.board.board[3][0], popedQueue.board.board[3][1], popedQueue.board.board[3][2]);
-            // console.log(popedQueue.board.board[3][3], popedQueue.board.board[3][4], popedQueue.board.board[3][5]);
-            // console.log(popedQueue.board.board[4][0], popedQueue.board.board[4][1], popedQueue.board.board[4][2]);
-            // console.log(popedQueue.board.board[4][3], popedQueue.board.board[4][4], popedQueue.board.board[4][5]);
-            // console.log(popedQueue.board.board[5][0], popedQueue.board.board[5][1], popedQueue.board.board[5][2]);
-            // console.log(popedQueue.board.board[5][3], popedQueue.board.board[5][4], popedQueue.board.board[5][5]);
-            // console.log("popedQueue.board end");
-
             States[] memory states = getStates(popedQueue.board, vehicles);
 
             for (uint8 i = 0; i < states.length; i++) {
                 if (states[i].stateId > 0) {
-                    bytes32 hash = hashBoard(states[i].board.board);
+                    bytes32 hash = hashBoard(states[i].board);
 
                     // console.log(states[i].board.board[0][0], states[i].board.board[0][1], states[i].board.board[0][2]);
                     // console.log(states[i].board.board[0][3], states[i].board.board[0][4], states[i].board.board[0][5]);
@@ -102,10 +91,6 @@ contract RushHourSolver is IRushHourSolver {
                     // console.log(states[i].board.board[5][3], states[i].board.board[5][4], states[i].board.board[5][5]);
 
                     if (!isVisited(visited, hash)) {
-                        // console.log(states[i].vehicle.carId, states[i].direction == Direction.FORWARD ? "FORWARD" : "BACKWARD");
-                        // steps[stepIndex] = Step(states[i].vehicle.carId, states[i].direction);
-                        // stepIndex++;
-
                         Step[] memory newSteps = append(popedQueue.steps, Step(states[i].vehicle.carId, states[i].direction));
 
                         queue[queueIndex] = Queue({
@@ -125,19 +110,18 @@ contract RushHourSolver is IRushHourSolver {
         return new Step[](0);
     }
 
-    function getStates(GameBoardLib.GameBoard memory _gameBoard, VehicleLib.Vehicle[] memory _vehicles) internal pure returns (States[] memory) {
+    function getStates(uint8[6][6] memory _gameBoard, VehicleLib.Vehicle[] memory _vehicles) internal pure returns (States[] memory) {
         States[] memory states = new States[](36);
         uint8 stateIndex = 0;
 
-        for (uint8 row = 0; row < BOARD_HEIGHT; row++) {
-            for (uint8 column = 0; column < BOARD_WIDTH; column++) {
-                uint8 vehicleId = _gameBoard.board[column][row];
+        for (uint8 row = 0; row < 6; row++) {
+            for (uint8 column = 0; column < 6; column++) {
+                uint8 vehicleId = _gameBoard[column][row];
                 if (vehicleId != 0) {
                     VehicleLib.Vehicle memory vehicle = _vehicles[vehicleId - 1];
 
                     if (isMovable(vehicle, _gameBoard, Direction.FORWARD)) {
-                        GameBoardLib.GameBoard memory newGameBoard;
-                        newGameBoard.setBoard(deepCopy(_gameBoard.board));
+                        uint8[6][6] memory newGameBoard = deepCopy(_gameBoard);
                         VehicleLib.Vehicle memory newVehicle = VehicleLib.Vehicle(vehicle.carId, vehicle.startX, vehicle.startY, vehicle.endX, vehicle.endY, vehicle.mainVehicle);
                         newVehicle.moveForward();
 
@@ -145,11 +129,11 @@ contract RushHourSolver is IRushHourSolver {
                         (uint8[] memory newVehicleX, uint8[] memory newVehicleY) = newVehicle.getOccupiedLocations();
                         
                         for (uint8 i = 0; i < vehicleX.length; i++) {
-                            newGameBoard.board[vehicleX[i]][vehicleY[i]] = 0;
+                            newGameBoard[vehicleX[i]][vehicleY[i]] = 0;
                         }
 
                         for (uint8 i = 0; i < newVehicleX.length; i++) {
-                            newGameBoard.board[newVehicleX[i]][newVehicleY[i]] = vehicle.carId;
+                            newGameBoard[newVehicleX[i]][newVehicleY[i]] = vehicle.carId;
                         }
 
                         States memory newState = States({
@@ -162,8 +146,7 @@ contract RushHourSolver is IRushHourSolver {
                         stateIndex++;
                     }
                     if (isMovable(vehicle, _gameBoard, Direction.BACKWARD)) {
-                        GameBoardLib.GameBoard memory newGameBoard;
-                        newGameBoard.setBoard(deepCopy(_gameBoard.board));
+                        uint8[6][6] memory newGameBoard = deepCopy(_gameBoard);
                         VehicleLib.Vehicle memory newVehicle = VehicleLib.Vehicle(vehicle.carId, vehicle.startX, vehicle.startY, vehicle.endX, vehicle.endY, vehicle.mainVehicle);
                         newVehicle.moveBackward();
 
@@ -171,11 +154,11 @@ contract RushHourSolver is IRushHourSolver {
                         (uint8[] memory newVehicleX, uint8[] memory newVehicleY) = newVehicle.getOccupiedLocations();
                         
                         for (uint8 i = 0; i < vehicleX.length; i++) {
-                            newGameBoard.board[vehicleX[i]][vehicleY[i]] = 0;
+                            newGameBoard[vehicleX[i]][vehicleY[i]] = 0;
                         }
 
                         for (uint8 i = 0; i < newVehicleX.length; i++) {
-                            newGameBoard.board[newVehicleX[i]][newVehicleY[i]] = vehicle.carId;
+                            newGameBoard[newVehicleX[i]][newVehicleY[i]] = vehicle.carId;
                         }
 
                         States memory newState = States({
@@ -196,15 +179,15 @@ contract RushHourSolver is IRushHourSolver {
 
     function isMovable(
         VehicleLib.Vehicle memory _vehicle,
-        GameBoardLib.GameBoard memory _gameBoard,
+        uint8[6][6] memory _gameBoard,
         Direction _direction
     ) internal pure returns (bool) {
         if (_vehicle.getOrientation() == VehicleLib.Orientation.HORIZONTAL && _direction == Direction.FORWARD) {
             uint8 x = _vehicle.endX;
             uint8 y = _vehicle.endY + 1;
 
-            if (y < BOARD_HEIGHT) {
-                uint8 boardVehicle = _gameBoard.board[x][y];
+            if (y < 6) {
+                uint8 boardVehicle = _gameBoard[x][y];
                 if (boardVehicle != 0) {
                     return false;
                 }
@@ -220,8 +203,8 @@ contract RushHourSolver is IRushHourSolver {
             uint8 x = _vehicle.startX;
             uint8 y = _vehicle.startY - 1;
 
-            if (y < BOARD_HEIGHT && y > 0) {
-                uint8 boardVehicle = _gameBoard.board[x][y];
+            if (y < 6 && y > 0) {
+                uint8 boardVehicle = _gameBoard[x][y];
                 if (boardVehicle != 0) {
                     return false;
                 }
@@ -234,8 +217,8 @@ contract RushHourSolver is IRushHourSolver {
             uint8 x = _vehicle.endX + 1;
             uint8 y = _vehicle.endY;
 
-            if (x < BOARD_HEIGHT && x > 0) {
-                uint8 boardVehicle = _gameBoard.board[x][y];
+            if (x < 6 && x > 0) {
+                uint8 boardVehicle = _gameBoard[x][y];
                 if (boardVehicle != 0) {
                     return false;
                 }
@@ -251,8 +234,8 @@ contract RushHourSolver is IRushHourSolver {
             uint8 x = _vehicle.startX - 1;
             uint8 y = _vehicle.startY;
 
-            if (x < BOARD_HEIGHT && x > 0) {
-                uint8 boardVehicle = _gameBoard.board[x][y];
+            if (x < 6 && x > 0) {
+                uint8 boardVehicle = _gameBoard[x][y];
                 if (boardVehicle != 0) {
                     return false;
                 }
@@ -319,5 +302,9 @@ contract RushHourSolver is IRushHourSolver {
         }
 
         return false;
-    }   
+    }
+    
+    function isSolved(uint8[6][6] memory _board) internal pure returns (bool) {
+        return _board[2][5] == 1;
+    }
 }
