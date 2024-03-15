@@ -5,7 +5,7 @@
   "license": "MIT",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "hardhat test"
+    "test": "REPORT_GAS=true hardhat test"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
