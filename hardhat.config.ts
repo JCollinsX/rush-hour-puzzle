@@ -1,4 +1,4 @@
-import { HardhatUserConfig } from "hardhat/config";
+import { HardhatUserConfig, vars } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
 
 const config: HardhatUserConfig = {
@@ -11,6 +11,17 @@ const config: HardhatUserConfig = {
       },
     },
   },
+  networks: {
+    "sepolia": {
+      url: "https://eth-sepolia.api.onfinality.io/public",
+      accounts: [vars.get("PRIVATE_KEY")],
+    }
+  },
+  etherscan: {
+    apiKey: {
+      sepolia: vars.get("ETHERSCAN_API_KEY"),
+    },
+  }
 };
 
 export default config;

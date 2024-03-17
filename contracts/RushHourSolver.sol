@@ -31,18 +31,7 @@ contract RushHourSolver is IRushHourSolver {
             board: board
         });
 
-        uint8[17] memory vehicleIds; // Array to store encountered vehicle IDs
-        uint8 count = 0;
-        
-        for (uint8 i = 0; i < 6; i++) {
-            for (uint8 j = 0; j < 6; j++) {
-                uint8 vehicleId = board[i][j];
-                if (vehicleId != 0 && vehicleIds[vehicleId] == 0) {
-                    vehicleIds[vehicleId] = 1;
-                    count++;
-                }
-            }
-        }
+        uint8 count = countVehicles(board);
 
         for (uint8 depth = 1; depth <= 100; depth++) {
             Queue memory popedQueue = pop(queue);
@@ -51,25 +40,7 @@ contract RushHourSolver is IRushHourSolver {
                 return popedQueue.steps;
             }
 
-            VehicleLib.Vehicle[] memory vehicles = new VehicleLib.Vehicle[](count);
-            for (uint8 i = 0; i < 6; i++) {
-                for (uint8 j = 0; j < 6; j++) {
-                    if (popedQueue.board[i][j] == 1) {
-                        if (vehicles[0].carId == 0) {
-                            vehicles[0] = VehicleLib.Vehicle(1, i, j, i, j, true);
-                        } else {
-                            vehicles[0].setEndLocation(i, j);
-                        }
-                    }
-                    if (popedQueue.board[i][j] != 0) {
-                        if (vehicles[popedQueue.board[i][j] - 1].carId == 0) {
-                            vehicles[popedQueue.board[i][j] - 1] = VehicleLib.Vehicle(popedQueue.board[i][j], i, j, i, j, false);
-                        } else {
-                            vehicles[popedQueue.board[i][j] - 1].setEndLocation(i, j);
-                        }
-                    }
-                }
-            }
+            VehicleLib.Vehicle[] memory vehicles = getVehicles(popedQueue.board, count);
 
             States[] memory states = getStates(popedQueue.board, vehicles);
 
@@ -177,6 +148,25 @@ contract RushHourSolver is IRushHourSolver {
         return states;
     }
 
+    function getVehicles(uint8[6][6] memory _gameBoard, uint8 _count) internal pure returns (VehicleLib.Vehicle[] memory) {
+        VehicleLib.Vehicle[] memory vehicles = new VehicleLib.Vehicle[](_count);
+
+        for (uint8 row = 0; row < 6; row++) {
+            for (uint8 column = 0; column < 6; column++) {
+                uint8 vehicleId = _gameBoard[row][column];
+                if (vehicleId != 0) {
+                    if (vehicles[vehicleId - 1].carId == 0) {
+                        vehicles[vehicleId - 1] = VehicleLib.Vehicle(vehicleId, row, column, row, column, vehicleId == 1);
+                    } else {
+                        vehicles[vehicleId - 1].setEndLocation(row, column);
+                    }
+                }
+            }
+        }
+
+        return vehicles;
+    }
+
     function isMovable(
         VehicleLib.Vehicle memory _vehicle,
         uint8[6][6] memory _gameBoard,
@@ -245,6 +235,23 @@ contract RushHourSolver is IRushHourSolver {
         }
 
         return true;
+    }
+
+    function countVehicles(uint8[6][6] memory _gameBoard) internal pure returns (uint8) {
+        uint8 count = 0;
+        uint8[16] memory vehicleIds; // Array to store encountered vehicle IDs
+
+        for (uint8 i = 0; i < 6; i++) {
+            for (uint8 j = 0; j < 6; j++) {
+                uint8 vehicleId = _gameBoard[i][j];
+                if (vehicleId != 0 && vehicleIds[vehicleId] == 0) {
+                    vehicleIds[vehicleId] = 1;
+                    count++;
+                }
+            }
+        }
+
+        return count;
     }
 
     function hashBoard(uint8[6][6] memory _board) internal pure returns (bytes32) {
