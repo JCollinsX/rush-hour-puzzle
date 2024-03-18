@@ -13,7 +13,7 @@ interface IRushHourSolver {
 
     struct Step {
         uint8 carId;
-        Direction direction;
+        MovementDirection direction;
     }
     
     /**
@@ -25,5 +25,5 @@ interface IRushHourSolver {
     * @return An array with step-by-step instructions on how to get the
     * red car (denoted by 1s) out.
     */
-    function solve(uint8[6][6] memory board) external pure returns (Step[] memory);
+    function solve(uint8[6][6] memory board) external view returns (Step[] memory);
 }

@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.24;
 
-import "./interface/IRushHourSolver.sol";
 import "./libraries/VehicleLib.sol";
 
-contract RushHourSolver is IRushHourSolver {
+contract RushHourSolver {
     using VehicleLib for VehicleLib.Vehicle;
 
     struct States {
@@ -14,13 +13,20 @@ contract RushHourSolver is IRushHourSolver {
         uint8[6][6] board;
     }
 
+    enum Direction { FORWARD, BACKWARD }
+
+    struct Step {
+        uint8 carId;
+        Direction direction;
+    }
+
     struct Queue {
         uint8 queueId;
         Step[] steps;
         uint8[6][6] board;
     }
 
-    function solve(uint8[6][6] memory board) external pure override returns (Step[] memory) {
+    function solve(uint8[6][6] memory board) external pure returns (Step[] memory) {
         bytes32[] memory visited = new bytes32[](50);
         Queue[] memory queue = new Queue[](50);
         uint8 visitedIndex = 0;
