@@ -8,15 +8,25 @@ import "hardhat/console.sol";
 contract RushHourSolverHeuristics is IRushHourSolver {
     using CarLib for CarLib.Car;
 
-    function solve(uint8[6][6] memory board) external view override returns (Step[] memory) {
+    function solve(
+        uint8[6][6] memory board
+    ) external view override returns (Step[] memory) {
         bytes32[] memory visited;
         Step[] memory steps;
         uint8 depth;
 
         // Initialize board & cars
-        (CarLib.Car[] memory cars, uint8[8][8] memory newBoard) = initialize(board);
+        (CarLib.Car[] memory cars, uint8[8][8] memory newBoard) = initialize(
+            board
+        );
 
-        (bool success, Step[] memory newStep, ) = moveCars(visited, newBoard, cars, steps, depth);
+        (bool success, Step[] memory newStep, ) = moveCars(
+            visited,
+            newBoard,
+            cars,
+            steps,
+            depth
+        );
         if (success) {
             return newStep;
         }
@@ -24,7 +34,13 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return steps;
     }
 
-    function moveCars(bytes32[] memory _visited, uint8[8][8] memory _gameBoard, CarLib.Car[] memory _cars, Step[] memory _steps, uint8 _depth) internal view returns (bool, Step[] memory, uint8) {
+    function moveCars(
+        bytes32[] memory _visited,
+        uint8[8][8] memory _gameBoard,
+        CarLib.Car[] memory _cars,
+        Step[] memory _steps,
+        uint8 _depth
+    ) internal view returns (bool, Step[] memory, uint8) {
         bytes32 hash = hashBoard(_gameBoard);
         bytes32[] memory newVisited;
 
@@ -43,7 +59,8 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         for (uint8 i = 0; i < _cars.length; i++) {
             CarLib.Car memory _car = _cars[i];
             if (!_car.isVertical) {
-                if (_car.isMainCar) { // Horizontal Car
+                if (_car.isMainCar) {
+                    // Horizontal Car
                     // Red car Heuristic - Try moving right first
                     if (_gameBoard[_car.x][_car.y + _car.size] == 0) {
                         _gameBoard[_car.x][_car.y + _car.size] = _car.carId;
@@ -51,9 +68,26 @@ contract RushHourSolverHeuristics is IRushHourSolver {
                         _car.y++;
                         _cars[i] = _car;
 
-                        (bool success, Step[] memory newStep, uint8 newDepth) = moveCars(newVisited, _gameBoard, _cars, _steps, _depth + 1);
+                        (
+                            bool success,
+                            Step[] memory newStep,
+                            uint8 newDepth
+                        ) = moveCars(
+                                newVisited,
+                                _gameBoard,
+                                _cars,
+                                _steps,
+                                _depth + 1
+                            );
                         if (success) {
-                            return (true, append(newStep, Step(_car.carId, MovementDirection.Right)), newDepth + 1);
+                            return (
+                                true,
+                                append(
+                                    newStep,
+                                    Step(_car.carId, MovementDirection.Right)
+                                ),
+                                newDepth + 1
+                            );
                         }
 
                         // Cancel the move
@@ -62,15 +96,33 @@ contract RushHourSolverHeuristics is IRushHourSolver {
                         _gameBoard[_car.x][_car.y] = _car.carId;
                         _cars[i] = _car;
                     }
-                    if (_gameBoard[_car.x][_car.y - 1] == 0) { // Red car Heuristic - Try moving left
+                    if (_gameBoard[_car.x][_car.y - 1] == 0) {
+                        // Red car Heuristic - Try moving left
                         _gameBoard[_car.x][_car.y - 1] = _car.carId;
                         _gameBoard[_car.x][_car.y + _car.size - 1] = 0;
                         _car.y--;
                         _cars[i] = _car;
 
-                        (bool success, Step[] memory newStep, uint8 newDepth) = moveCars(newVisited, _gameBoard, _cars, _steps, _depth + 1);
+                        (
+                            bool success,
+                            Step[] memory newStep,
+                            uint8 newDepth
+                        ) = moveCars(
+                                newVisited,
+                                _gameBoard,
+                                _cars,
+                                _steps,
+                                _depth + 1
+                            );
                         if (success) {
-                            return (true, append(newStep, Step(_car.carId, MovementDirection.Left)), newDepth + 1);
+                            return (
+                                true,
+                                append(
+                                    newStep,
+                                    Step(_car.carId, MovementDirection.Left)
+                                ),
+                                newDepth + 1
+                            );
                         }
 
                         // Cancel the move
@@ -79,16 +131,34 @@ contract RushHourSolverHeuristics is IRushHourSolver {
                         _gameBoard[_car.x][_car.y + _car.size - 1] = _car.carId;
                         _cars[i] = _car;
                     }
-                } else { // all other horizontal cars: try moving left first
+                } else {
+                    // all other horizontal cars: try moving left first
                     if (_gameBoard[_car.x][_car.y - 1] == 0) {
                         _gameBoard[_car.x][_car.y - 1] = _car.carId;
                         _gameBoard[_car.x][_car.y + _car.size - 1] = 0;
                         _car.y--;
                         _cars[i] = _car;
 
-                        (bool success, Step[] memory newStep, uint8 newDepth) = moveCars(newVisited, _gameBoard, _cars, _steps, _depth + 1);
+                        (
+                            bool success,
+                            Step[] memory newStep,
+                            uint8 newDepth
+                        ) = moveCars(
+                                newVisited,
+                                _gameBoard,
+                                _cars,
+                                _steps,
+                                _depth + 1
+                            );
                         if (success) {
-                            return (true, append(newStep, Step(_car.carId, MovementDirection.Left)), newDepth + 1);
+                            return (
+                                true,
+                                append(
+                                    newStep,
+                                    Step(_car.carId, MovementDirection.Left)
+                                ),
+                                newDepth + 1
+                            );
                         }
 
                         // Cancel the move
@@ -103,9 +173,26 @@ contract RushHourSolverHeuristics is IRushHourSolver {
                         _car.y++;
                         _cars[i] = _car;
 
-                        (bool success, Step[] memory newStep, uint8 newDepth) = moveCars(newVisited, _gameBoard, _cars, _steps, _depth + 1);
+                        (
+                            bool success,
+                            Step[] memory newStep,
+                            uint8 newDepth
+                        ) = moveCars(
+                                newVisited,
+                                _gameBoard,
+                                _cars,
+                                _steps,
+                                _depth + 1
+                            );
                         if (success) {
-                            return (true, append(newStep, Step(_car.carId, MovementDirection.Right)), newDepth + 1);
+                            return (
+                                true,
+                                append(
+                                    newStep,
+                                    Step(_car.carId, MovementDirection.Right)
+                                ),
+                                newDepth + 1
+                            );
                         }
 
                         // Cancel the move
@@ -115,17 +202,36 @@ contract RushHourSolverHeuristics is IRushHourSolver {
                         _cars[i] = _car;
                     }
                 }
-            } else { // Vertical Cars
-                if (_car.size == 3) { // Trucks: move down first
+            } else {
+                // Vertical Cars
+                if (_car.size == 3) {
+                    // Trucks: move down first
                     if (_gameBoard[_car.x + _car.size][_car.y] == 0) {
                         _gameBoard[_car.x + _car.size][_car.y] = _car.carId;
                         _gameBoard[_car.x][_car.y] = 0;
                         _car.x++;
                         _cars[i] = _car;
 
-                        (bool success, Step[] memory newStep, uint8 newDepth) = moveCars(newVisited, _gameBoard, _cars, _steps, _depth + 1);
+                        (
+                            bool success,
+                            Step[] memory newStep,
+                            uint8 newDepth
+                        ) = moveCars(
+                                newVisited,
+                                _gameBoard,
+                                _cars,
+                                _steps,
+                                _depth + 1
+                            );
                         if (success) {
-                            return (true, append(newStep, Step(_car.carId, MovementDirection.Down)), newDepth + 1);
+                            return (
+                                true,
+                                append(
+                                    newStep,
+                                    Step(_car.carId, MovementDirection.Down)
+                                ),
+                                newDepth + 1
+                            );
                         }
 
                         // Cancel the move
@@ -140,9 +246,26 @@ contract RushHourSolverHeuristics is IRushHourSolver {
                         _car.x--;
                         _cars[i] = _car;
 
-                        (bool success, Step[] memory newStep, uint8 newDepth) = moveCars(newVisited, _gameBoard, _cars, _steps, _depth + 1);
+                        (
+                            bool success,
+                            Step[] memory newStep,
+                            uint8 newDepth
+                        ) = moveCars(
+                                newVisited,
+                                _gameBoard,
+                                _cars,
+                                _steps,
+                                _depth + 1
+                            );
                         if (success) {
-                            return (true, append(newStep, Step(_car.carId, MovementDirection.Up)), newDepth + 1);
+                            return (
+                                true,
+                                append(
+                                    newStep,
+                                    Step(_car.carId, MovementDirection.Up)
+                                ),
+                                newDepth + 1
+                            );
                         }
 
                         // Cancel the move
@@ -158,9 +281,26 @@ contract RushHourSolverHeuristics is IRushHourSolver {
                         _car.x--;
                         _cars[i] = _car;
 
-                        (bool success, Step[] memory newStep, uint8 newDepth) = moveCars(newVisited, _gameBoard, _cars, _steps, _depth + 1);
+                        (
+                            bool success,
+                            Step[] memory newStep,
+                            uint8 newDepth
+                        ) = moveCars(
+                                newVisited,
+                                _gameBoard,
+                                _cars,
+                                _steps,
+                                _depth + 1
+                            );
                         if (success) {
-                            return (true, append(newStep, Step(_car.carId, MovementDirection.Up)), newDepth + 1);
+                            return (
+                                true,
+                                append(
+                                    newStep,
+                                    Step(_car.carId, MovementDirection.Up)
+                                ),
+                                newDepth + 1
+                            );
                         }
 
                         // Cancel the move
@@ -175,9 +315,26 @@ contract RushHourSolverHeuristics is IRushHourSolver {
                         _car.x++;
                         _cars[i] = _car;
 
-                        (bool success, Step[] memory newStep, uint8 newDepth) = moveCars(newVisited, _gameBoard, _cars, _steps, _depth + 1);
+                        (
+                            bool success,
+                            Step[] memory newStep,
+                            uint8 newDepth
+                        ) = moveCars(
+                                newVisited,
+                                _gameBoard,
+                                _cars,
+                                _steps,
+                                _depth + 1
+                            );
                         if (success) {
-                            return (true, append(newStep, Step(_car.carId, MovementDirection.Down)), newDepth + 1);
+                            return (
+                                true,
+                                append(
+                                    newStep,
+                                    Step(_car.carId, MovementDirection.Down)
+                                ),
+                                newDepth + 1
+                            );
                         }
 
                         // Cancel the move
@@ -196,7 +353,9 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return (false, _steps, _depth + 1);
     }
 
-    function initialize(uint8[6][6] memory _gameBoard) internal pure returns (CarLib.Car[] memory, uint8[8][8] memory) {
+    function initialize(
+        uint8[6][6] memory _gameBoard
+    ) internal pure returns (CarLib.Car[] memory, uint8[8][8] memory) {
         uint8 count = countCars(_gameBoard);
         uint8[8][8] memory newBoard = changeBoard(_gameBoard);
         CarLib.Car[] memory cars = new CarLib.Car[](count);
@@ -205,7 +364,14 @@ contract RushHourSolverHeuristics is IRushHourSolver {
             for (uint8 j = 0; j < 8; j++) {
                 uint8 carId = newBoard[i][j];
                 if (carId != 0 && carId != 99 && cars[carId - 1].carId == 0) {
-                    CarLib.Car memory _car = CarLib.Car(carId, 1, i, j, i + 1 < 8 && newBoard[i + 1][j] == carId, carId == 1);
+                    CarLib.Car memory _car = CarLib.Car(
+                        carId,
+                        1,
+                        i,
+                        j,
+                        i + 1 < 8 && newBoard[i + 1][j] == carId,
+                        carId == 1
+                    );
                     if (_car.isVertical) {
                         for (uint8 k = i + 1; k < 8; k++) {
                             if (newBoard[k][j] == carId) {
@@ -231,7 +397,10 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return (cars, newBoard);
     }
 
-    function sendToFront(CarLib.Car[] memory _cars, uint8 _carId) internal pure returns (CarLib.Car[] memory) {
+    function sendToFront(
+        CarLib.Car[] memory _cars,
+        uint8 _carId
+    ) internal pure returns (CarLib.Car[] memory) {
         CarLib.Car[] memory cars = new CarLib.Car[](_cars.length);
         uint8 index;
         for (uint8 i = 0; i < _cars.length; i++) {
@@ -245,7 +414,10 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return cars;
     }
 
-    function sendToBack(CarLib.Car[] memory _cars, uint8 _carId) internal pure returns (CarLib.Car[] memory) {
+    function sendToBack(
+        CarLib.Car[] memory _cars,
+        uint8 _carId
+    ) internal pure returns (CarLib.Car[] memory) {
         CarLib.Car[] memory cars = new CarLib.Car[](_cars.length);
         uint8 index;
         for (uint8 i = 0; i < _cars.length; i++) {
@@ -259,17 +431,23 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return cars;
     }
 
-    function applyHeuristics(uint8[8][8] memory _gameBoard, CarLib.Car[] memory _cars) internal pure returns (CarLib.Car[] memory) {
+    function applyHeuristics(
+        uint8[8][8] memory _gameBoard,
+        CarLib.Car[] memory _cars
+    ) internal pure returns (CarLib.Car[] memory) {
         for (uint8 i = 0; i < _cars.length; i++) {
             // Priority 3 (Low): Vertical Cars in the way...
-            if (_cars[i].isVertical && _gameBoard[3][_cars[i].y] == _cars[i].carId) {
+            if (
+                _cars[i].isVertical &&
+                _gameBoard[3][_cars[i].y] == _cars[i].carId
+            ) {
                 _cars = sendToFront(_cars, _cars[i].carId);
             }
         }
 
         for (uint8 i = 0; i < _cars.length; i++) {
             // Priority 2 (Medium): Horizontal Cars that can move to the left
-            if (_cars[i].isVertical == false && _cars[i].isMainCar == false)  {
+            if (_cars[i].isVertical == false && _cars[i].isMainCar == false) {
                 if (_gameBoard[_cars[i].x][_cars[i].y - 1] == 0) {
                     _cars = sendToFront(_cars, _cars[i].carId);
                 } else {
@@ -293,7 +471,9 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return _cars;
     }
 
-    function countCars(uint8[6][6] memory _gameBoard) internal pure returns (uint8) {
+    function countCars(
+        uint8[6][6] memory _gameBoard
+    ) internal pure returns (uint8) {
         uint8 count;
 
         for (uint8 i; i < 6; ++i) {
@@ -307,23 +487,63 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return count;
     }
 
-    function hashBoard(uint8[8][8] memory _board) internal pure returns (bytes32) {
-        bytes32 row1 = keccak256(abi.encodePacked(
-            _board[0][0], _board[0][1], _board[0][2], _board[0][3], _board[0][4], _board[0][5],
-            _board[1][0], _board[1][1], _board[1][2], _board[1][3], _board[1][4], _board[1][5]
-        ));
-        bytes32 row2 = keccak256(abi.encodePacked(
-            _board[2][0], _board[2][1], _board[2][2], _board[2][3], _board[2][4], _board[2][5],
-            _board[3][0], _board[3][1], _board[3][2], _board[3][3], _board[3][4], _board[3][5]
-        ));
-        bytes32 row3 = keccak256(abi.encodePacked(
-            _board[4][0], _board[4][1], _board[4][2], _board[4][3], _board[4][4], _board[4][5],
-            _board[5][0], _board[5][1], _board[5][2], _board[5][3], _board[5][4], _board[5][5]
-        ));
+    function hashBoard(
+        uint8[8][8] memory _board
+    ) internal pure returns (bytes32) {
+        bytes32 row1 = keccak256(
+            abi.encodePacked(
+                _board[0][0],
+                _board[0][1],
+                _board[0][2],
+                _board[0][3],
+                _board[0][4],
+                _board[0][5],
+                _board[1][0],
+                _board[1][1],
+                _board[1][2],
+                _board[1][3],
+                _board[1][4],
+                _board[1][5]
+            )
+        );
+        bytes32 row2 = keccak256(
+            abi.encodePacked(
+                _board[2][0],
+                _board[2][1],
+                _board[2][2],
+                _board[2][3],
+                _board[2][4],
+                _board[2][5],
+                _board[3][0],
+                _board[3][1],
+                _board[3][2],
+                _board[3][3],
+                _board[3][4],
+                _board[3][5]
+            )
+        );
+        bytes32 row3 = keccak256(
+            abi.encodePacked(
+                _board[4][0],
+                _board[4][1],
+                _board[4][2],
+                _board[4][3],
+                _board[4][4],
+                _board[4][5],
+                _board[5][0],
+                _board[5][1],
+                _board[5][2],
+                _board[5][3],
+                _board[5][4],
+                _board[5][5]
+            )
+        );
         return keccak256(abi.encodePacked(row1, row2, row3));
     }
 
-    function changeBoard(uint8[6][6] memory _board) internal pure returns (uint8[8][8] memory) {
+    function changeBoard(
+        uint8[6][6] memory _board
+    ) internal pure returns (uint8[8][8] memory) {
         uint8[8][8] memory newBoard;
         for (uint8 i = 0; i < 8; i++) {
             for (uint8 j = 0; j < 8; j++) {
@@ -337,7 +557,10 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return newBoard;
     }
 
-    function append(Step[] memory _steps, Step memory _step) internal pure returns (Step[] memory) {
+    function append(
+        Step[] memory _steps,
+        Step memory _step
+    ) internal pure returns (Step[] memory) {
         Step[] memory newSteps = new Step[](_steps.length + 1);
         for (uint8 i = 0; i < _steps.length; i++) {
             newSteps[i] = _steps[i];
@@ -354,7 +577,10 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return newSteps;
     }
 
-    function appendVisited(bytes32[] memory _visited, bytes32 _hash) internal pure returns (bytes32[] memory) {
+    function appendVisited(
+        bytes32[] memory _visited,
+        bytes32 _hash
+    ) internal pure returns (bytes32[] memory) {
         bytes32[] memory newVisited = new bytes32[](_visited.length + 1);
         for (uint8 i = 0; i < _visited.length; i++) {
             newVisited[i] = _visited[i];
@@ -363,7 +589,10 @@ contract RushHourSolverHeuristics is IRushHourSolver {
         return newVisited;
     }
 
-    function isVisited(bytes32[] memory _visited, bytes32 _hash) internal pure returns (bool) {
+    function isVisited(
+        bytes32[] memory _visited,
+        bytes32 _hash
+    ) internal pure returns (bool) {
         for (uint8 i = 0; i < _visited.length; i++) {
             if (_visited[i] == _hash) {
                 return true;
@@ -372,7 +601,7 @@ contract RushHourSolverHeuristics is IRushHourSolver {
 
         return false;
     }
-    
+
     function isSolved(uint8[8][8] memory _board) internal pure returns (bool) {
         return _board[3][6] == 1 && _board[3][5] == 1;
     }

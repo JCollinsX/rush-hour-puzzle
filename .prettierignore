@@ -1,0 +1,7 @@
+build
+.coverage_*
+coverage
+artifacts
+cache
+typechain-types
+node_modules

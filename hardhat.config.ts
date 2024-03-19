@@ -1,5 +1,6 @@
 import { HardhatUserConfig, vars } from "hardhat/config";
 import "@nomicfoundation/hardhat-toolbox";
+import "hardhat-prettier";
 
 const config: HardhatUserConfig = {
   solidity: {

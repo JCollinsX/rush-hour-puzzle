@@ -6,7 +6,8 @@
   "scripts": {
     "compile": "hardhat compile",
     "test": "REPORT_GAS=true hardhat test test/RushHourSolver.ts",
-    "test:heuristics": "REPORT_GAS=true hardhat test test/RushHourSolverHeuristics.ts"
+    "test:heuristics": "REPORT_GAS=true hardhat test test/RushHourSolverHeuristics.ts",
+    "prettier": "npx prettier --write --plugin=prettier-plugin-solidity 'contracts/**/*.sol'"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",
@@ -23,6 +24,9 @@
     "ethers": "^6.4.0",
     "hardhat": "^2.21.0",
     "hardhat-gas-reporter": "^1.0.8",
+    "hardhat-prettier": "^0.0.1",
+    "prettier": "^3.2.5",
+    "prettier-plugin-solidity": "^1.3.1",
     "solidity-coverage": "^0.8.0",
     "ts-node": ">=8.0.0",
     "typechain": "^8.3.0",

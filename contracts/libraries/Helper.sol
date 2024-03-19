@@ -1,12 +1,9 @@
 // SPDX-License-Identifier: UNLICENSED
-
-
-pragma solidity ^0.8.13;
+pragma solidity ^0.8.24;
 
 // @dev Excessive use of memory variables causes deep stack errors.
 // This library helps save memory usage.
 library Helper {
-
     //           64 bit           64 bit           64 bit           64 bit
     //                                             prevMap        currentMap         --> map
     //      pos(first 1 bit)                       stepNum           carId           --> params
