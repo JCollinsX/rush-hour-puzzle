@@ -5,7 +5,8 @@
   "license": "MIT",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "REPORT_GAS=true hardhat test"
+    "test": "REPORT_GAS=true hardhat test test/RushHourSolver.ts",
+    "test:heuristics": "REPORT_GAS=true hardhat test test/RushHourSolverHeuristics.ts"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-chai-matchers": "^2.0.0",

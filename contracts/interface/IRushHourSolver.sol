@@ -9,8 +9,6 @@ interface IRushHourSolver {
         Left
     }
     
-    enum Direction { FORWARD, BACKWARD }
-
     struct Step {
         uint8 carId;
         MovementDirection direction;

@@ -12,7 +12,7 @@ describe("RushHourSolverHeuristics", function () {
     return { rushHourSolver, owner, otherAccount };
   }
 
-  /*it("Test Case 1", async function () {
+  it("Test Case 1", async function () {
     const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
 
     const input = [
@@ -25,9 +25,9 @@ describe("RushHourSolverHeuristics", function () {
     ]
     const output = await rushHourSolver.solve(input)
     console.log(output)
-  });*/
+  });
 
-  /*it("Test Case 2", async function () {
+  it("Test Case 2", async function () {
     const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
 
     const input = [
@@ -40,9 +40,9 @@ describe("RushHourSolverHeuristics", function () {
     ]
     const output = await rushHourSolver.solve(input)
     console.log(output)
-  });*/
+  });
 
-  /*it("Test Case 3", async function () {
+  it("Test Case 3", async function () {
     const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
 
     const input = [
@@ -56,7 +56,7 @@ describe("RushHourSolverHeuristics", function () {
 
     const output = await rushHourSolver.solve(input)
     console.log(output)
-  });*/
+  });
 
   it("Test Case 4", async function () {
     const { rushHourSolver } = await loadFixture(deployRushHourSolverFixture);
@@ -67,7 +67,7 @@ describe("RushHourSolverHeuristics", function () {
       [1, 1, 4, 0, 0, 3],
       [5, 0, 4, 0, 6, 6],
       [5, 0, 0, 0, 7, 0],
-      [0, 0, 0, 0, 7, 0]
+      [8, 8, 8, 0, 7, 0]
     ]
     const output = await rushHourSolver.solve(input)
     console.log(output)
