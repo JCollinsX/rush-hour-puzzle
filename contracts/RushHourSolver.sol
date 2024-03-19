@@ -13,6 +13,13 @@ contract RushHourSolver is IRushHourSolver {
         uint256 stepNum;
     }
 
+    // @dev store step path for best solution.
+    struct StepPath {
+        uint256 stepLength;
+        uint256[100] steps;
+        uint256 finalMap;
+    }
+
     // Full park map
     //
     // 0 0 0 0 0 0 0 0
@@ -51,13 +58,6 @@ contract RushHourSolver is IRushHourSolver {
     uint256 private constant MAX_STACK_DEEP = 36;
     uint256 private constant MAX_SNAP_MAP_LENGTH = 3000;
 
-    // @dev store step path for best solution.
-    struct StepPath {
-        uint256 stepLength;
-        uint256[100] steps;
-        uint256 finalMap;
-    }
-
     function solve(
         uint8[6][6] memory board
     ) external view override returns (Step[] memory) {
@@ -88,18 +88,25 @@ contract RushHourSolver is IRushHourSolver {
         // set carId to max
         params = params.set_64Bit_4(type(uint64).max);
 
-        //        // set pos to 0
-        //        params = params.set_1Bit_1(0);
+        // set pos to 0
+        // params = params.set_1Bit_1(0);
 
         _move(map, cars, params, stepPath, snapMap);
 
         Step[] memory finalSteps = new Step[](stepPath.stepLength);
 
         for (uint256 i; i < stepPath.stepLength; ++i) {
-            finalSteps[i] = Step(
-                uint8(stepPath.steps[i]._64Bit_4()) + 1,
-                MovementDirection(stepPath.steps[i]._1Bit_1())
-            );
+            if (cars[stepPath.steps[i]._64Bit_4()]._1Bit_1() == 0) {
+                finalSteps[i] = Step(
+                    uint8(stepPath.steps[i]._64Bit_4()) + 1,
+                    stepPath.steps[i]._1Bit_1() == 0 ? MovementDirection.Right : MovementDirection.Left
+                );
+            } else {
+                finalSteps[i] = Step(
+                    uint8(stepPath.steps[i]._64Bit_4()) + 1,
+                    stepPath.steps[i]._1Bit_1() == 0 ? MovementDirection.Down : MovementDirection.Up
+                );
+            }
         }
 
         return finalSteps;
@@ -108,7 +115,6 @@ contract RushHourSolver is IRushHourSolver {
     function getMap(
         uint8[6][6] memory cells
     ) private pure returns (uint256 map, uint256[] memory cars) {
-        require(cells.length == 6, "invalid length");
         uint256 carId;
         uint256 point;
 
@@ -122,7 +128,6 @@ contract RushHourSolver is IRushHourSolver {
         }
         cars = new uint256[](numOfCars);
         for (uint256 i; i < 6; ) {
-            require(cells[i].length == 6, "invalid length");
             for (uint256 j; j < 6; ) {
                 carId = cells[i][j];
                 if (carId != 0) {

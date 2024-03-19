@@ -24,7 +24,13 @@ describe("RushHourSolver", function () {
       [0, 0, 0, 0, 0, 0],
     ]
     const output = await rushHourSolver.solve(input)
-    console.log(output)
+    if (output.length > 0) {
+      output.map((step) => {
+        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
+      })
+    } else {
+      console.log("No Solution Found")
+    }
   });
 
   it("Test Case 2", async function () {
@@ -39,7 +45,13 @@ describe("RushHourSolver", function () {
       [0, 0, 0, 0, 0, 0],
     ]
     const output = await rushHourSolver.solve(input)
-    console.log(output)
+    if (output.length > 0) {
+      output.map((step) => {
+        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
+      })
+    } else {
+      console.log("No Solution Found")
+    }
   });
 
   it("Test Case 3", async function () {
@@ -54,7 +66,13 @@ describe("RushHourSolver", function () {
       [0, 0, 0, 0, 0, 0],
     ]
     const output = await rushHourSolver.solve(input)
-    console.log(output)
+    if (output.length > 0) {
+      output.map((step) => {
+        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
+      })
+    } else {
+      console.log("No Solution Found")
+    }
   });
 
   it("Test Case 4", async function () {
@@ -69,6 +87,12 @@ describe("RushHourSolver", function () {
       [8, 8, 8, 0, 7, 0]
     ]
     const output = await rushHourSolver.solve(input)
-    console.log(output)
+    if (output.length > 0) {
+      output.map((step) => {
+        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
+      })
+    } else {
+      console.log("No Solution Found")
+    }
   });
 });
