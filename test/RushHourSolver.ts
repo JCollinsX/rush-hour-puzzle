@@ -1,5 +1,6 @@
 import { loadFixture } from "@nomicfoundation/hardhat-toolbox/network-helpers";
 import { ethers } from "hardhat";
+import { IRushHourSolver } from "../typechain-types";
 
 describe("RushHourSolver", function () {
   async function deployRushHourSolverFixture() {
@@ -10,6 +11,16 @@ describe("RushHourSolver", function () {
     const rushHourSolver = await RushHourSolver.deploy();
 
     return { rushHourSolver, owner, otherAccount };
+  }
+
+  function printOutputSteps(output: IRushHourSolver.StepStructOutput[]) {
+    if (output.length > 0) {
+      output.map((step) => {
+        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
+      })
+    } else {
+      console.log("No Solution Found")
+    }
   }
 
   it("Test Case 1", async function () {
@@ -24,13 +35,7 @@ describe("RushHourSolver", function () {
       [0, 0, 0, 0, 0, 0],
     ]
     const output = await rushHourSolver.solve(input)
-    if (output.length > 0) {
-      output.map((step) => {
-        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
-      })
-    } else {
-      console.log("No Solution Found")
-    }
+    printOutputSteps(output);
   });
 
   it("Test Case 2", async function () {
@@ -45,13 +50,7 @@ describe("RushHourSolver", function () {
       [0, 0, 0, 0, 0, 0],
     ]
     const output = await rushHourSolver.solve(input)
-    if (output.length > 0) {
-      output.map((step) => {
-        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
-      })
-    } else {
-      console.log("No Solution Found")
-    }
+    printOutputSteps(output);
   });
 
   it("Test Case 3", async function () {
@@ -66,13 +65,7 @@ describe("RushHourSolver", function () {
       [0, 0, 0, 0, 0, 0],
     ]
     const output = await rushHourSolver.solve(input)
-    if (output.length > 0) {
-      output.map((step) => {
-        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
-      })
-    } else {
-      console.log("No Solution Found")
-    }
+    printOutputSteps(output);
   });
 
   it("Test Case 4", async function () {
@@ -86,13 +79,9 @@ describe("RushHourSolver", function () {
       [5, 0, 0, 0, 7, 0],
       [8, 8, 8, 0, 7, 0]
     ]
-    const output = await rushHourSolver.solve(input)
-    if (output.length > 0) {
-      output.map((step) => {
-        console.log(`Car #${step.carId} => ${Number(step.direction) === 0 ? 'Up' : Number(step.direction) === 1 ? 'Right' : Number(step.direction) === 2 ? 'Down' : 'Left'}`)
-      })
-    } else {
-      console.log("No Solution Found")
-    }
-  });
+    const output = await rushHourSolver.solve(input, {
+      gasLimit: 600000000
+    })
+    printOutputSteps(output);
+  }).timeout(6000000);
 });

@@ -8,18 +8,6 @@ contract RushHourSolver is IRushHourSolver {
     using Helper for uint256;
     // (01111110)b = 126
 
-    struct SnapMap {
-        uint256 map;
-        uint256 stepNum;
-    }
-
-    // @dev store step path for best solution.
-    struct StepPath {
-        uint256 stepLength;
-        uint256[100] steps;
-        uint256 finalMap;
-    }
-
     // Full park map
     //
     // 0 0 0 0 0 0 0 0
@@ -53,14 +41,24 @@ contract RushHourSolver is IRushHourSolver {
     // (0000000000000000000000000000011000000000000000000000000000000000)b = 2 ^ 33 + 2 ^ 34 = 25,769,803,776
     uint256 private constant COMPLETED_CAR0_POSITION = 25769803776;
 
+    uint256 private minFinalStepNum;
+
     // In solidity, excessive recursive function calls cause stack overflow.
-    // In this solution, we set the highest stack deep to 36.
+    // In this solution, set the highest stack deep to 36.
     uint256 private constant MAX_STACK_DEEP = 36;
-    uint256 private constant MAX_SNAP_MAP_LENGTH = 3000;
+
+    uint256 private constant START_MEMORY_ADDRESS = 10000;
+
+    // @dev store step path for best solution.
+    struct StepPath {
+        uint256 stepLength;
+        uint256[100] steps;
+        uint256 finalMap;
+    }
 
     function solve(
         uint8[6][6] memory board
-    ) external view override returns (Step[] memory) {
+    ) public view returns (Step[] memory) {
         StepPath memory stepPath;
 
         // @dev global variable. will transfer the pointer of cars to functions.
@@ -71,27 +69,11 @@ contract RushHourSolver is IRushHourSolver {
         // 65 ~ 128 bit : prev map value
         uint256 map;
 
-        // 1 ~ 64 bit : carId
-        // 65 ~ 128 bit : stepNum
-        // 255 bit: pos (positive or negative) positive -> 0, negative -> 1
-        uint256 params;
-
         (map, cars) = getMap(board);
 
-        SnapMap[] memory snapMap;
-        snapMap = new SnapMap[](2000);
+        _initSnapMap(cars);
 
-        // snap the map at start time
-        snapMap[0].map = map;
-        snapMap[0].stepNum = 1;
-
-        // set carId to max
-        params = params.set_64Bit_4(type(uint64).max);
-
-        // set pos to 0
-        // params = params.set_1Bit_1(0);
-
-        _move(map, cars, params, stepPath, snapMap);
+        _move(map, 0, cars, stepPath);
 
         Step[] memory finalSteps = new Step[](stepPath.stepLength);
 
@@ -99,12 +81,16 @@ contract RushHourSolver is IRushHourSolver {
             if (cars[stepPath.steps[i]._64Bit_4()]._1Bit_1() == 0) {
                 finalSteps[i] = Step(
                     uint8(stepPath.steps[i]._64Bit_4()) + 1,
-                    stepPath.steps[i]._1Bit_1() == 0 ? MovementDirection.Right : MovementDirection.Left
+                    stepPath.steps[i]._1Bit_1() == 0
+                        ? MovementDirection.Right
+                        : MovementDirection.Left
                 );
             } else {
                 finalSteps[i] = Step(
                     uint8(stepPath.steps[i]._64Bit_4()) + 1,
-                    stepPath.steps[i]._1Bit_1() == 0 ? MovementDirection.Down : MovementDirection.Up
+                    stepPath.steps[i]._1Bit_1() == 0
+                        ? MovementDirection.Down
+                        : MovementDirection.Up
                 );
             }
         }
@@ -114,7 +100,7 @@ contract RushHourSolver is IRushHourSolver {
 
     function getMap(
         uint8[6][6] memory cells
-    ) private pure returns (uint256 map, uint256[] memory cars) {
+    ) internal pure returns (uint256 map, uint256[] memory cars) {
         uint256 carId;
         uint256 point;
 
@@ -139,11 +125,16 @@ contract RushHourSolver is IRushHourSolver {
                             cars[carId]._64Bit_4() / point == 6
                         ) {
                             cars[carId] = cars[carId].set_1Bit_1(0);
+                            cars[carId] = cars[carId].set_3Bit_2(5 - j);
                         } else {
                             cars[carId] = cars[carId].set_1Bit_1(1);
+                            cars[carId] = cars[carId].set_3Bit_2(5 - i);
                         }
                     }
                     cars[carId] += point;
+                    cars[carId] = cars[carId].set_3Bit_1(
+                        cars[carId]._3Bit_1() + 1
+                    );
                     map += point;
                 }
                 ++j;
@@ -153,56 +144,57 @@ contract RushHourSolver is IRushHourSolver {
 
         // print current position
         for (uint256 i; i < cars.length; ++i) {
+            cars[i] = cars[i].set_58Bit_1(5 ** i);
             _resetHistoryPosition(cars, i);
         }
+        for (uint256 i; i < cars.length; ++i) {
+            if (cars[i]._3Bit_1() == 3) {
+                cars[i] = cars[i].set_58Bit_1(5 ** (cars.length - 1));
+                cars[cars.length - 1] = cars[cars.length - 1].set_58Bit_1(
+                    5 ** i
+                );
+                _createSnapMapMemorySpace(cars.length, true);
+                return (map, cars);
+            }
+        }
+        _createSnapMapMemorySpace(cars.length, false);
     }
 
     function _calcPoint(
         uint256 i,
         uint256 j
-    ) private pure returns (uint256 point) {
+    ) internal pure returns (uint256 point) {
         // 8 * 8 - 8 * (i + 1) - (j + 2) = 54 - 8 * i - j
         point = 1 << (54 - 8 * i - j);
     }
 
     function _move(
         uint256 map,
+        uint256 stepNum,
         uint256[] memory cars,
-        uint256 params,
-        StepPath memory stepPath,
-        SnapMap[] memory snapMap
+        StepPath memory stepPath
     ) internal view returns (bool hasSolution) {
-        if (
-            stepPath.stepLength <= params._64Bit_3() && stepPath.stepLength > 0
-        ) {
+        if (stepPath.stepLength <= stepNum && stepPath.stepLength > 0) {
             return false;
         }
 
         for (uint256 i; i < cars.length; ++i) {
-            // set carId to i
-            params = params.set_64Bit_4(i);
-
             // check if it's possible to go back
             // If there is no other car sharing the past route, just move in one direction
             // This eliminates redundant operations in which the car moves back and forth between places.
             if (cars[i]._64Bit_3() != cars[i]._64Bit_4()) {
-                // set pos to prevPos
-                params = params.set_1Bit_1(cars[i]._1Bit_2());
                 // if this path has a solution
-                if (_moveCar(map, cars, params, stepPath, snapMap)) {
+                if (
+                    _moveCar(map, i, stepNum, cars, cars[i]._1Bit_2(), stepPath)
+                ) {
                     hasSolution = true;
                 }
             } else {
-                // set pos to 0
-                params = params.set_1Bit_1(0);
-
-                if (_moveCar(map, cars, params, stepPath, snapMap)) {
+                if (_moveCar(map, i, stepNum, cars, 0, stepPath)) {
                     hasSolution = true;
                 }
 
-                // set pos to 1
-                params = params.set_1Bit_1(1);
-                if (_moveCar(map, cars, params, stepPath, snapMap)) {
+                if (_moveCar(map, i, stepNum, cars, 1, stepPath)) {
                     hasSolution = true;
                 }
             }
@@ -212,24 +204,21 @@ contract RushHourSolver is IRushHourSolver {
 
     function _moveCar(
         uint256 map,
+        uint256 carId,
+        uint256 stepNum,
         uint256[] memory cars,
-        uint256 params,
-        StepPath memory stepPath,
-        SnapMap[] memory snapMap
+        uint256 pos,
+        StepPath memory stepPath
     ) internal view returns (bool) {
         // check that the current path is deeper than the best path
-        if (
-            params._64Bit_3() >= stepPath.stepLength && stepPath.stepLength > 0
-        ) {
+        if (stepNum >= stepPath.stepLength && stepPath.stepLength > 0) {
             return false;
         }
         // check max stack deep
-        if (params._64Bit_3() > MAX_STACK_DEEP) {
+        if (stepNum > MAX_STACK_DEEP) {
             return false;
         }
 
-        uint256 carId = params._64Bit_4();
-        uint256 pos = params._1Bit_1();
         uint256 _currentPosition = cars[carId]._64Bit_4();
 
         if (cars[carId]._1Bit_1() == 0) {
@@ -238,86 +227,56 @@ contract RushHourSolver is IRushHourSolver {
             (map, _currentPosition) = _moveY(map, _currentPosition, pos);
         }
 
-        uint256 _map = map + _currentPosition;
-
-        // temp cars
-        uint256[] memory _cars = new uint256[](cars.length);
-        for (uint256 i; i < cars.length; ++i) {
-            _cars[i] = cars[i];
-        }
-
         // check if the current car collides with another car or fence
         if (
             map & _currentPosition == 0 &&
             _currentPosition & FENCE_OF_PARK_MAP == 0
         ) {
+            // update linePosition of car
+            uint256 prevLinePosition = cars[carId]._3Bit_2();
+            if (pos == 0) {
+                cars[carId] = cars[carId].set_3Bit_2(prevLinePosition - 1);
+            } else {
+                cars[carId] = cars[carId].set_3Bit_2(prevLinePosition + 1);
+            }
             // check the shortest path for a given map
-            if (_checkSnapMap(snapMap, _map, params._64Bit_3())) {
-                // update map
-                map = _map;
+            if (_checkSnapMap(cars, stepNum)) {
+                // update the step number
+                ++stepNum;
+                map = map + _currentPosition;
+                // temp cars
+                uint256[] memory _cars = new uint256[](cars.length);
+                for (uint256 i; i < cars.length; ++i) {
+                    _cars[i] = cars[i];
+                }
+                cars[carId] = cars[carId].set_3Bit_2(prevLinePosition);
+
                 uint256 _step = carId.set_1Bit_1(pos);
                 // check if car 1 has arrived at its destination
                 if (carId == 0 && _currentPosition == COMPLETED_CAR0_POSITION) {
                     // update shortest solution
-                    stepPath.steps[params._64Bit_3()] = _step;
-                    stepPath.stepLength = params._64Bit_3() + 1;
+                    stepPath.steps[stepNum - 1] = _step;
+                    stepPath.stepLength = stepNum;
                     stepPath.finalMap = map;
                     return true;
                 } else {
                     // update car position
-                    cars[carId] = cars[carId].set_64Bit_4(_currentPosition);
-                    // update the step number
-                    params = params.set_64Bit_3(params._64Bit_3() + 1);
-                    // update the prev pos of car
-                    cars[carId] = cars[carId].set_1Bit_2(pos);
-                    // update history positions
-                    _updateCrossHistoryPosition(cars, carId);
-                    if (_move(map, cars, params, stepPath, snapMap)) {
-                        // if the path is the shortest path, store the path
-                        stepPath.steps[params._64Bit_3() - 1] = _step;
+                    _cars[carId] = _cars[carId].set_64Bit_4(_currentPosition);
 
-                        // restore cars
-                        for (uint256 i; i < cars.length; ++i) {
-                            cars[i] = _cars[i];
-                        }
+                    // update the prev pos of car
+                    _cars[carId] = _cars[carId].set_1Bit_2(pos);
+
+                    // update history positions
+                    _updateCrossHistoryPosition(_cars, carId);
+                    if (_move(map, stepNum, _cars, stepPath)) {
+                        // if the path is the shortest path, store the path
+                        stepPath.steps[stepNum - 1] = _step;
+
                         return true;
                     }
                 }
             }
-        }
-
-        // restore cars
-        for (uint256 i; i < cars.length; ++i) {
-            cars[i] = _cars[i];
-        }
-        return false;
-    }
-
-    function _checkSnapMap(
-        SnapMap[] memory snapMap,
-        uint256 map,
-        uint256 stepNum
-    ) internal pure returns (bool) {
-        uint256 i;
-        while (i < snapMap.length) {
-            if (snapMap[i].map == map) {
-                if (snapMap[i].stepNum > stepNum + 1) {
-                    snapMap[i].stepNum = stepNum + 1;
-                    return true;
-                } else {
-                    return false;
-                }
-            }
-
-            if (snapMap[i].map == 0) {
-                break;
-            }
-            ++i;
-        }
-        if (i < snapMap.length) {
-            snapMap[i].map = map;
-            snapMap[i].stepNum = stepNum + 1;
-            return true;
+            cars[carId] = cars[carId].set_3Bit_2(prevLinePosition);
         }
         return false;
     }
@@ -364,11 +323,16 @@ contract RushHourSolver is IRushHourSolver {
         uint256 position,
         uint256 pos
     ) internal pure returns (uint256, uint256) {
-        map = map - position;
-        if (pos == 0) {
-            position = position >> 1;
-        } else {
-            position = position << 1;
+        assembly {
+            map := sub(map, position)
+
+            switch pos
+            case 0 {
+                position := shr(1, position)
+            }
+            default {
+                position := shl(1, position)
+            }
         }
         return (map, position);
     }
@@ -378,12 +342,89 @@ contract RushHourSolver is IRushHourSolver {
         uint256 position,
         uint256 pos
     ) internal pure returns (uint256, uint256) {
-        map = map - position;
-        if (pos == 0) {
-            position = position >> 8;
-        } else {
-            position = position << 8;
+        assembly {
+            map := sub(map, position)
+
+            switch pos
+            case 0 {
+                position := shr(8, position)
+            }
+            default {
+                position := shl(8, position)
+            }
         }
         return (map, position);
+    }
+
+    function _createSnapMapMemorySpace(
+        uint256 numOfCar,
+        bool is3Len
+    ) internal pure returns (bool) {
+        if (numOfCar > 10) {
+            return false;
+        }
+        uint m = 5 ** (numOfCar - 1);
+        assembly {
+            let endSnapMapMemoryAddress
+            switch is3Len
+            case 1 {
+                endSnapMapMemoryAddress := add(START_MEMORY_ADDRESS, shl(5, m))
+            }
+            default {
+                endSnapMapMemoryAddress := add(
+                    START_MEMORY_ADDRESS,
+                    shl(5, mul(m, 5))
+                )
+            }
+            mstore(0x40, endSnapMapMemoryAddress)
+        }
+        return true;
+    }
+
+    function _initSnapMap(uint256[] memory cars) internal pure returns (bool) {
+        uint256 mAddress = (_getTotalLinePosition(cars) << 3) +
+            START_MEMORY_ADDRESS;
+        assembly {
+            mstore8(mAddress, 1)
+        }
+        return true;
+    }
+
+    function _checkSnapMap(
+        uint256[] memory cars,
+        uint256 stepNum
+    ) internal pure returns (bool) {
+        uint256 mAddress = (_getTotalLinePosition(cars) << 3) +
+            START_MEMORY_ADDRESS;
+        uint256 storedStepNum;
+
+        assembly {
+            storedStepNum := mload(mAddress)
+            storedStepNum := shr(248, storedStepNum)
+        }
+
+        if (storedStepNum == 0) {
+            assembly {
+                mstore8(mAddress, stepNum)
+            }
+            return true;
+        } else if (storedStepNum > stepNum) {
+            assembly {
+                mstore8(mAddress, stepNum)
+            }
+            return true;
+        }
+
+        return false;
+    }
+
+    function _getTotalLinePosition(
+        uint256[] memory cars
+    ) internal pure returns (uint256) {
+        uint256 sum;
+        for (uint256 i; i < cars.length; ++i) {
+            sum += cars[i]._58Bit_1() * cars[i]._3Bit_2();
+        }
+        return sum;
     }
 }
