@@ -1,4 +1,4 @@
-# Floki Blockchain Assignment
+# Rush hour solver with Solidity
 
 ## Installation
 
